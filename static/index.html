@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <head>
     <title>Code Sandbox</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <form action="/exec" method="POST">
-        <textarea name="codez" cols="100" rows="50"></textarea>
-        <button type="submit">Submit</button>
+    <script src="main.js"></script>
+    <form name="code">
+        <textarea name="codez" cols="100" rows="50">
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("henlo world")
+}
+        </textarea>
+        <button type="submit">Run the codez!</button>
     </form>
+    <div>
+        Result:
+        <pre><code id="result"></code></pre>
+    </div>
 </body>
 </html>

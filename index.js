@@ -5,21 +5,22 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import Docker from 'dockerode'
 
-const helloworlddotgo = `
-package main
-
-import "fmt"
-
-func main() {
-	fmt.Println("henlo world from the server")
-}
-`
-
 const PORT = 3000
 
 let app = express()
 
 let docker = new Docker()
+
+async function streamToString(stream) {
+    // lets have a ReadableStream as a stream variable
+    const chunks = []
+
+    for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk))
+    }
+
+    return Buffer.concat(chunks).toString('utf-8')
+}
 
 function execCode(code) {
     return new Promise((resolve, reject) => {
@@ -52,13 +53,13 @@ function execCode(code) {
                                     stream.write(code)
                                     stream.end()
 
-                                    streamToStringPromise(stream).then(
-                                        (data) => {
-                                            const result = data.trimEnd()
-                                            console.log(result)
-                                            resolve(result)
-                                        }
-                                    )
+                                    streamToString(stream).then((data) => {
+                                        const result = data
+                                            .trim()
+                                            .replace(/[\0\f\01]/g, '') // clean up null byte characters and other oddities from the buffer output
+                                        console.log(result)
+                                        resolve(result)
+                                    })
                                 }
                             )
                         }
@@ -69,12 +70,12 @@ function execCode(code) {
     })
 }
 
-app.use(bodyParser.urlencoded())
+app.use(bodyParser.json())
 
 app.post('/exec', (req, res) => {
     if (req.body.codez) {
         execCode(req.body.codez).then((result) => {
-            res.status(200).send(result)
+            res.status(200).send(JSON.stringify({ result }))
         })
     } else {
         res.status(400).send('Missing the codez')
@@ -82,15 +83,6 @@ app.post('/exec', (req, res) => {
 })
 
 app.use(express.static('static'))
-
-const streamToStringPromise = (stream) => {
-    const chunks = []
-    return new Promise((resolve, reject) => {
-        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
-        stream.on('error', (err) => reject(err))
-        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-    })
-}
 
 app.listen(PORT, () => {
     console.log('Code Sandbox is running 🚀')
