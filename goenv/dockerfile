@@ -12,4 +12,6 @@ COPY . .
 #RUN go build -v -o /usr/local/bin/app ./...
 #CMD ["app"]
 
+RUN echo "goenv"
+
 CMD ["./entrypoint.sh"]

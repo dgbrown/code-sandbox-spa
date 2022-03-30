@@ -1,18 +1,19 @@
 {
-  "name": "code-sandbox-spa",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "type": "module",
-  "scripts": {
-    "dev": "nodemon"
-  },
-  "dependencies": {
-    "body-parser": "^1.19.2",
-    "dockerode": "^3.3.1",
-    "express": "^4.17.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.15"
-  }
+    "name": "code-sandbox-spa",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+        "dev": "nodemon",
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "body-parser": "^1.19.2",
+        "dockerode": "^3.3.1",
+        "express": "^4.17.3"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.15"
+    }
 }
