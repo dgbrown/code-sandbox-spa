@@ -2,8 +2,6 @@ FROM node:16.8.0-alpine as deps
 
 WORKDIR /app
 
-ENV PORT=3000
-
 # install server deps
 COPY package.json yarn.lock ./
 RUN yarn
@@ -23,6 +21,9 @@ COPY ui/src ./ui/src
 RUN cd ./ui && yarn build
 
 FROM build as app
+
+ENV PORT=3000
+ENV NODE_ENV=production
 
 # run app
 EXPOSE 3000
