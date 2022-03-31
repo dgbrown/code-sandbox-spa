@@ -1,6 +1,7 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import Docker from 'dockerode'
+import { PassThrough } from 'stream'
 
 const PORT = process.env.PORT || 4000
 
@@ -19,7 +20,40 @@ async function streamToString(stream) {
     return Buffer.concat(chunks).toString('utf-8')
 }
 
-function execCode(code) {
+const removeTerminalGarbage = (string) => {
+    return string.trim().replace(/[\0\f\01]/g, '')
+}
+
+const transformGoOutputForResponse = (stdout, stderr) => {
+    stdout = removeTerminalGarbage(stdout)
+    stderr = removeTerminalGarbage(stderr)
+
+    let errorType = null
+
+    const BUILD_ERR_PREFIX_HINT = '# improbable.io/hydra/codesandbox\n'
+    if (stderr.startsWith(BUILD_ERR_PREFIX_HINT)) {
+        stderr = stderr.replace(BUILD_ERR_PREFIX_HINT, '')
+        errorType = 'BUILD'
+    } else {
+        errorType = 'RUNTIME'
+    }
+
+    console.debug(`outstring: ${stdout}`)
+    console.debug(`errstring: ${stderr}`)
+
+    return {
+        output: stdout,
+        error:
+            stderr.length > 0
+                ? {
+                      message: stderr,
+                      type: errorType,
+                  }
+                : null,
+    }
+}
+
+function execGoCode(code) {
     return new Promise((resolve, reject) => {
         docker.createContainer(
             {
@@ -39,6 +73,7 @@ function execCode(code) {
                             Cmd: ['/usr/src/app/entrypoint.sh'],
                             AttachStdin: true,
                             AttachStdout: true,
+                            AttachStderr: true,
                         },
                         function (err, exec) {
                             if (err) {
@@ -50,12 +85,30 @@ function execCode(code) {
                                     stream.write(code)
                                     stream.end()
 
-                                    streamToString(stream).then((data) => {
-                                        const result = data
-                                            .trim()
-                                            .replace(/[\0\f\01]/g, '') // clean up null byte characters and other oddities from the buffer output
-                                        console.log(result)
-                                        resolve(result)
+                                    const stdoutPassthrough = new PassThrough()
+                                    const stderrPassthrough = new PassThrough()
+
+                                    docker.modem.demuxStream(
+                                        stream,
+                                        stdoutPassthrough,
+                                        stderrPassthrough
+                                    )
+
+                                    stream.on('end', function () {
+                                        stdoutPassthrough.end()
+                                        stderrPassthrough.end()
+                                    })
+
+                                    Promise.all([
+                                        streamToString(stdoutPassthrough),
+                                        streamToString(stderrPassthrough),
+                                    ]).then(([stdoutString, stderrString]) => {
+                                        resolve(
+                                            transformGoOutputForResponse(
+                                                stdoutString,
+                                                stderrString
+                                            )
+                                        )
                                     })
                                 }
                             )
@@ -77,7 +130,7 @@ app.get('/*', function (req, res) {
 
 app.post('/exec', (req, res) => {
     if (req.body.codez) {
-        execCode(req.body.codez).then((result) => {
+        execGoCode(req.body.codez).then((result) => {
             res.status(200).send(JSON.stringify({ result }))
         })
     } else {

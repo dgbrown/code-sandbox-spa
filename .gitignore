@@ -1,3 +1,7 @@
+# Goenv debug stuff
+goenv/app
+goenv/main.go
+
 # Logs
 logs
 *.log
