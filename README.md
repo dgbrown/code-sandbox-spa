@@ -4,12 +4,30 @@ Test project for messing around with remote code execution sandboxes (eg. go pla
 
 ## Getting Started
 
+Install dependencies:
+
 ```
 yarn
+```
+
+Build code environment image(s):
+
+```
 docker build goenv -t codesandbox-goenv
+```
+
+Run the service:
+
+```
 yarn dev
 # in another terminal
 cd ui && yarn start
+```
+
+...or as a container:
+
+```
+docker compose up --build
 ```
 
 ## TODO
