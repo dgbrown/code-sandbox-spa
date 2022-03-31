@@ -72,7 +72,7 @@ app.use(bodyParser.json())
 app.use(express.static('ui/build'))
 
 app.get('/*', function (req, res) {
-    res.sendFile(path.join(__dirname, 'ui/build/index.html', 'index.html'))
+    res.sendFile(path.join(__dirname, 'ui/build/index.html'))
 })
 
 app.post('/exec', (req, res) => {
