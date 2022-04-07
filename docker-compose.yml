@@ -9,3 +9,23 @@ services:
       - "3000:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+        - backend
+    depends_on:
+      - mq
+  mq:
+    image: rabbitmq:3
+    container_name: mq
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+        - ./rabbit_enabled_plugins:/etc/rabbitmq/enabled_plugins
+    networks:
+        - backend
+
+networks:
+  backend:
+    driver: bridge
